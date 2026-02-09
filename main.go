@@ -16,4 +16,7 @@ func main() {
 	fmt.Scan(&userKg)
 	IMT := userKg / math.Pow(userHeight, IMTPower)
 	fmt.Printf("Рост: %2.f, вес: %2.f, ваш индекс массы тела: %2.f\n", userHeight, userKg, IMT)
+
+	fmt.Println("Нажмите Enter, чтобы выйти...")
+	fmt.Scanln() // Ждет нажатия Enter
 }
