@@ -19,4 +19,5 @@ func main() {
 
 	fmt.Println("Нажмите Enter, чтобы выйти...")
 	fmt.Scanln() // Ждет нажатия Enter
+	fmt.Scanln() // костыль
 }
