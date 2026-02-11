@@ -6,13 +6,7 @@ import (
 )
 
 func main() {
-	const ConvUSDtoEUR float64 = 0.84
-	const ConvUSDtoRUB float64 = 77.50
-	const ConvEURtoRUB float64 = ConvUSDtoRUB / ConvUSDtoEUR
-	var volume float64
-	var pairFirst string
-	var pairSecond string
-	calculatePair(inputUser(volume, pairFirst, pairSecond))
+	userMenu()
 }
 
 func inputUser(volume float64, pairFirst, pairSecond string) (float64, string, string) {
@@ -66,9 +60,13 @@ func inputUser(volume float64, pairFirst, pairSecond string) (float64, string, s
 			fmt.Println("Выбрана валюта \"USD\"")
 		case "eur":
 			fmt.Println("Выбрана валюта \"EUR\"")
+		default:
+			fmt.Println("Ошибка! Выбрана недоступная валюта. Повторите попытку заново.")
+			continue
 		}
 
 		pairFirst, pairSecond = strings.ToUpper(pairFirst), strings.ToUpper(pairSecond)
+		clearTerminal()
 		fmt.Println("=== Итог ===")
 		fmt.Printf("%.2f %s в валюту %s.\n", volume, pairFirst, pairSecond)
 		fmt.Println("=========")
@@ -78,12 +76,108 @@ func inputUser(volume float64, pairFirst, pairSecond string) (float64, string, s
 		if choice == "y" || choice == "Y" {
 			return volume, pairFirst, pairSecond
 		} else {
+			clearTerminal()
 			continue
 		}
 	}
 }
 
 func calculatePair(volume float64, pairFirst, pairSecond string) {
-	fmt.Printf("Сумма: %.2f, из валюты %s в валюту %s = в разработке..\n", volume, pairFirst, pairSecond)
-	// Как и просили в курсе, пока без действий просто вывод, поскольку разберем это дальше
+	var choice int
+	const ConvUSDtoEUR float64 = 0.84
+	const ConvUSDtoRUB float64 = 77.50
+	const ConvEURtoRUB float64 = ConvUSDtoRUB / ConvUSDtoEUR
+	convVolume := volume
+
+	switch {
+	case pairFirst == "USD" && pairSecond == "EUR":
+		convVolume *= ConvUSDtoEUR
+	case pairFirst == "USD" && pairSecond == "RUB":
+		convVolume *= ConvUSDtoRUB
+	case pairFirst == "EUR" && pairSecond == "RUB":
+		convVolume *= ConvEURtoRUB
+	case pairFirst == "EUR" && pairSecond == "USD":
+		convVolume /= ConvUSDtoEUR
+	case pairFirst == "RUB" && pairSecond == "EUR":
+		convVolume /= ConvEURtoRUB
+	case pairFirst == "RUB" && pairSecond == "USD":
+		convVolume /= ConvUSDtoRUB
+	default:
+		fmt.Println("Ошибка! Не найден курс для конвертации.")
+	}
+	clearTerminal()
+	fmt.Printf("Сумма: %.2f, из валюты %s в валюту %s = %.2f\n", volume, pairFirst, pairSecond, convVolume)
+	fmt.Print("\n1. Конвертировать еще раз")
+	fmt.Print("\n2. Вернуться в меню")
+	fmt.Print("\n0. Выход\n")
+	fmt.Print("\nВыберите пункт меню: ")
+	fmt.Scan(&choice)
+	switch choice {
+	case 1:
+		clearTerminal()
+		fmt.Println("=== Конвертер валют ===")
+		calculatePair(inputUser(volume, pairFirst, pairSecond))
+	case 2:
+		userMenu()
+	case 0:
+		break
+	default:
+		fmt.Println("Ошибка! Такого пункта меню не существует.")
+	}
+}
+
+func userMenu() {
+	var volume float64
+	var pairFirst string
+	var pairSecond string
+	var choice int
+	clearTerminal()
+	fmt.Println("=== Конвертер валют - МЕНЮ ===")
+	fmt.Println("1. Конвертировать валюты")
+	fmt.Println("2. Актуальный курс валют")
+	fmt.Println("0. Выход")
+	fmt.Println("============")
+	fmt.Print("\nВыберите пункт меню: ")
+	fmt.Scan(&choice)
+
+	switch choice {
+	case 1:
+		clearTerminal()
+		fmt.Println("=== Конвертер валют ===")
+		calculatePair(inputUser(volume, pairFirst, pairSecond))
+	case 2:
+		currentExchange()
+	case 0:
+		break
+	default:
+		fmt.Println("Ошибка! Такого пункта меню не существует.")
+	}
+}
+
+func clearTerminal() {
+	fmt.Print("\033[H\033[2J") // ANSI код для очистки консоли
+}
+
+func currentExchange() {
+	const ConvUSDtoEUR float64 = 0.84
+	const ConvUSDtoRUB float64 = 77.50
+	const ConvEURtoRUB float64 = ConvUSDtoRUB / ConvUSDtoEUR
+	var choice int
+
+	clearTerminal()
+	fmt.Println("=== Актуальный курс валют к рублю ===")
+	fmt.Printf("USD = %.2f\n", ConvUSDtoRUB)
+	fmt.Printf("EUR = %.2f\n", ConvEURtoRUB)
+	fmt.Printf("\n1. Вернуться в меню\n")
+	fmt.Printf("0. Выход\n")
+	fmt.Print("\nВыберите пункт меню: ")
+	fmt.Scan(&choice)
+	switch choice {
+	case 1:
+		userMenu()
+	case 0:
+		break
+	default:
+		fmt.Println("Ошибка! Такого пункта меню не существует.")
+	}
 }
