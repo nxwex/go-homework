@@ -5,32 +5,105 @@ import (
 	"strings"
 )
 
+const ConvUSDtoEUR float64 = 0.84
+const ConvUSDtoRUB float64 = 77.50
+const ConvEURtoRUB float64 = ConvUSDtoRUB / ConvUSDtoEUR
+
 func main() {
 	userMenu()
 }
 
-func inputUser(volume float64, pairFirst, pairSecond string) (float64, string, string) {
-	availableCurrency := "В какую валюту? "
-
+func userMenu() {
 	for {
-		fmt.Print("Из какой валюты (RUB, USD, EUR): ")
-		fmt.Scan(&pairFirst)
-		pairFirst = strings.ToLower(pairFirst)
-		switch pairFirst {
-		case "rub":
-			fmt.Println("Выбрана валюта \"RUB\"")
-		case "usd":
-			fmt.Println("Выбрана валюта \"USD\"")
-		case "eur":
-			fmt.Println("Выбрана валюта \"EUR\"")
-		default:
-			fmt.Printf("Ошибка! Пожалуйста, выберите, из доступных валют.\n")
+		var choice int
+		clearTerminal()
+		fmt.Println("=== Конвертер валют - МЕНЮ ===")
+		fmt.Println("1. Конвертировать валюты")
+		fmt.Println("2. Актуальный курс валют")
+		fmt.Println("3. Github")
+		fmt.Println("0. Выход")
+		fmt.Println("============")
+		fmt.Print("\nВыберите пункт меню: ")
+
+		if _, err := fmt.Scan(&choice); err != nil {
 			continue
 		}
 
+		switch choice {
+		case 1:
+			volume, pairFirst, pairSecond := inputUser()
+			calculatePair(volume, pairFirst, pairSecond)
+		case 2:
+			currentExchange()
+		case 3:
+			showGithub()
+		case 0:
+			clearTerminal()
+			return
+		}
+	}
+}
+
+func inputUser() (float64, string, string) {
+	clearTerminal()
+	pairFirst := inputCurrency("Из какой валюты ", "")
+	volume := inputAmount()
+	pairSecond := inputCurrency("В какую валюту: ", pairFirst)
+
+	fmt.Println("=== Итог ===")
+	fmt.Printf("%.2f %s в валюту %s.\n", volume, pairFirst, pairSecond)
+	fmt.Println("=========")
+	return volume, pairFirst, pairSecond
+}
+
+func inputCurrency(label string, pairFirst string) string {
+	availableCurrency := "В какую валюту? "
+	var current string
+	for {
+		if pairFirst == "" {
+			fmt.Print(label, "(RUB, USD, EUR): ")
+		} else {
+			switch strings.ToLower(pairFirst) {
+			case "rub":
+				fmt.Print(availableCurrency, "(USD, EUR): ")
+			case "usd":
+				fmt.Print(availableCurrency, "(RUB, EUR): ")
+			case "eur":
+				fmt.Print(availableCurrency, "(RUB, USD): ")
+			}
+		}
+
+		fmt.Scan(&current)
+		current = strings.ToLower(current)
+
+		switch current {
+		case "rub", "usd", "eur":
+			if current == strings.ToLower(pairFirst) {
+				fmt.Printf("Ошибка! Пожалуйста, выберите, из доступных валют.\n")
+				continue
+			}
+			fmt.Printf("Выбрана валюта \"%s\"\n", strings.ToUpper(current))
+			return strings.ToUpper(current)
+		default:
+			if pairFirst == "" {
+				fmt.Printf("Ошибка! Пожалуйста, выберите, из доступных валют.\n")
+			} else {
+				fmt.Println("Ошибка! Выбрана недоступная валюта. Повторите попытку заново.")
+			}
+			continue
+		}
+	}
+}
+
+func inputAmount() float64 {
+	var volume float64
+	for {
 		fmt.Print("Введите количество средств для конвертации: ")
 		if _, err := fmt.Scan(&volume); err != nil {
 			fmt.Println("Ошибка! Нужно ввести целое число.")
+			// добавил защиту от спама, если пользователь введет символ, отличающийся от числа, то fmt.Scanln скушает и выведет ошибку
+			var trash string
+			fmt.Scanln(&trash)
 			continue
 		}
 
@@ -38,146 +111,74 @@ func inputUser(volume float64, pairFirst, pairSecond string) (float64, string, s
 			fmt.Println("Ошибка! Число должно быть больше нуля.")
 			continue
 		}
-
-		switch pairFirst {
-		case "rub":
-			fmt.Print(availableCurrency, "(USD, EUR): ")
-		case "usd":
-			fmt.Print(availableCurrency, "(RUB, EUR): ")
-		case "eur":
-			fmt.Print(availableCurrency, "(RUB, USD): ")
-		}
-
-		fmt.Scan(&pairSecond)
-		pairSecond = strings.ToLower(pairSecond)
-		switch pairSecond {
-		case pairFirst:
-			fmt.Printf("Ошибка! Пожалуйста, выберите, из доступных валют.\n")
-			continue
-		case "rub":
-			fmt.Println("Выбрана валюта \"RUB\"")
-		case "usd":
-			fmt.Println("Выбрана валюта \"USD\"")
-		case "eur":
-			fmt.Println("Выбрана валюта \"EUR\"")
-		default:
-			fmt.Println("Ошибка! Выбрана недоступная валюта. Повторите попытку заново.")
-			continue
-		}
-
-		pairFirst, pairSecond = strings.ToUpper(pairFirst), strings.ToUpper(pairSecond)
-		clearTerminal()
-		fmt.Println("=== Итог ===")
-		fmt.Printf("%.2f %s в валюту %s.\n", volume, pairFirst, pairSecond)
-		fmt.Println("=========")
-		fmt.Print("Подтвердите ваш выбор (y/n): ")
-		var choice string
-		fmt.Scan(&choice)
-		if choice == "y" || choice == "Y" {
-			return volume, pairFirst, pairSecond
-		} else {
-			clearTerminal()
-			continue
-		}
+		return volume
 	}
 }
 
 func calculatePair(volume float64, pairFirst, pairSecond string) {
-	var choice int
-	const ConvUSDtoEUR float64 = 0.84
-	const ConvUSDtoRUB float64 = 77.50
-	const ConvEURtoRUB float64 = ConvUSDtoRUB / ConvUSDtoEUR
-	convVolume := volume
+	for {
+		var choice int
+		convVolume := volume
 
-	switch {
-	case pairFirst == "USD" && pairSecond == "EUR":
-		convVolume *= ConvUSDtoEUR
-	case pairFirst == "USD" && pairSecond == "RUB":
-		convVolume *= ConvUSDtoRUB
-	case pairFirst == "EUR" && pairSecond == "RUB":
-		convVolume *= ConvEURtoRUB
-	case pairFirst == "EUR" && pairSecond == "USD":
-		convVolume /= ConvUSDtoEUR
-	case pairFirst == "RUB" && pairSecond == "EUR":
-		convVolume /= ConvEURtoRUB
-	case pairFirst == "RUB" && pairSecond == "USD":
-		convVolume /= ConvUSDtoRUB
-	default:
-		fmt.Println("Ошибка! Не найден курс для конвертации.")
-	}
-	clearTerminal()
-	fmt.Printf("Сумма: %.2f, из валюты %s в валюту %s = %.2f\n", volume, pairFirst, pairSecond, convVolume)
-	fmt.Print("\n1. Конвертировать еще раз")
-	fmt.Print("\n2. Вернуться в меню")
-	fmt.Print("\n0. Выход\n")
-	fmt.Print("\nВыберите пункт меню: ")
-	fmt.Scan(&choice)
-	switch choice {
-	case 1:
+		switch {
+		case pairFirst == "USD" && pairSecond == "EUR":
+			convVolume *= ConvUSDtoEUR
+		case pairFirst == "USD" && pairSecond == "RUB":
+			convVolume *= ConvUSDtoRUB
+		case pairFirst == "EUR" && pairSecond == "RUB":
+			convVolume *= ConvEURtoRUB
+		case pairFirst == "EUR" && pairSecond == "USD":
+			convVolume /= ConvUSDtoEUR
+		case pairFirst == "RUB" && pairSecond == "EUR":
+			convVolume /= ConvEURtoRUB
+		case pairFirst == "RUB" && pairSecond == "USD":
+			convVolume /= ConvUSDtoRUB
+		}
+
 		clearTerminal()
-		fmt.Println("=== Конвертер валют ===")
-		calculatePair(inputUser(volume, pairFirst, pairSecond))
-	case 2:
-		userMenu()
-	case 0:
-		break
-	default:
-		fmt.Println("Ошибка! Такого пункта меню не существует.")
+		fmt.Printf("Сумма: %.2f, из валюты %s в валюту %s = %.2f\n", volume, pairFirst, pairSecond, convVolume)
+		fmt.Print("\n1. Конвертировать еще раз")
+		fmt.Print("\n0. Вернуться в меню\n")
+		fmt.Print("\nВыберите пункт меню: ")
+		fmt.Scan(&choice)
+
+		if choice == 1 {
+			clearTerminal()
+			fmt.Println("=== Конвертер валют ===")
+			volume, pairFirst, pairSecond = inputUser()
+			continue
+		} else if choice == 0 {
+			return
+		}
 	}
-}
-
-func userMenu() {
-	var volume float64
-	var pairFirst string
-	var pairSecond string
-	var choice int
-	clearTerminal()
-	fmt.Println("=== Конвертер валют - МЕНЮ ===")
-	fmt.Println("1. Конвертировать валюты")
-	fmt.Println("2. Актуальный курс валют")
-	fmt.Println("0. Выход")
-	fmt.Println("============")
-	fmt.Print("\nВыберите пункт меню: ")
-	fmt.Scan(&choice)
-
-	switch choice {
-	case 1:
-		clearTerminal()
-		fmt.Println("=== Конвертер валют ===")
-		calculatePair(inputUser(volume, pairFirst, pairSecond))
-	case 2:
-		currentExchange()
-	case 0:
-		break
-	default:
-		fmt.Println("Ошибка! Такого пункта меню не существует.")
-	}
-}
-
-func clearTerminal() {
-	fmt.Print("\033[H\033[2J") // ANSI код для очистки консоли
 }
 
 func currentExchange() {
-	const ConvUSDtoEUR float64 = 0.84
-	const ConvUSDtoRUB float64 = 77.50
-	const ConvEURtoRUB float64 = ConvUSDtoRUB / ConvUSDtoEUR
 	var choice int
-
 	clearTerminal()
 	fmt.Println("=== Актуальный курс валют к рублю ===")
 	fmt.Printf("USD = %.2f\n", ConvUSDtoRUB)
 	fmt.Printf("EUR = %.2f\n", ConvEURtoRUB)
-	fmt.Printf("\n1. Вернуться в меню\n")
-	fmt.Printf("0. Выход\n")
+	fmt.Printf("\n0. Вернуться в меню\n")
 	fmt.Print("\nВыберите пункт меню: ")
 	fmt.Scan(&choice)
-	switch choice {
-	case 1:
-		userMenu()
-	case 0:
-		break
-	default:
-		fmt.Println("Ошибка! Такого пункта меню не существует.")
+	if choice == 0 {
+		return
+	}
+}
+
+func clearTerminal() {
+	fmt.Print("\033[H\033[2J")
+}
+
+func showGithub() {
+	var choice int
+	clearTerminal()
+	fmt.Print("link - https://github.com/nxwex\n")
+	fmt.Printf("\n0. Вернуться в меню\n")
+	fmt.Print("\nВыберите пункт меню: ")
+	fmt.Scan(&choice)
+	if choice == 0 {
+		return
 	}
 }
