@@ -1,3 +1,4 @@
 app-1
-converterX.exe
-*.DS_Store
+.idea
+*.exe
+.DS_Store
