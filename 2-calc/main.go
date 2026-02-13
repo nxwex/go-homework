@@ -19,14 +19,15 @@ func runApp() {
 	for {
 		fmt.Println("Какую операцию желаете выполнить? (AVG, SUM, MED)")
 		fmt.Println("Для выхода напишите 'Exit'")
-		userOperationInput := scanUserOperationInput()
+		userOperationInput := getValidOperation()
 		if userOperationInput == "EXIT" {
+			clearTerminal()
 			return
 		}
 
-		userNumInput := scanUserNumInput()
-		userNumbers := transformUserInput(userNumInput)
+		userNumbers := getValidNumbers()
 
+		clearTerminal()
 		result := fmt.Sprintf("Ваш результат: %v", calculateUserInput(userNumbers, userOperationInput))
 		fmt.Println(result)
 		fmt.Println("===")
@@ -107,7 +108,7 @@ func calculateUserInput(userNumbers []float64, operation string) float64 {
 	case "SUM":
 		result = calculateSum(userNumbers)
 	case "MED":
-		result = (calculateMed(userNumbers))
+		result = calculateMed(userNumbers)
 	default:
 		fmt.Println("Ошибка! Операция не найдена.")
 	}
@@ -132,6 +133,27 @@ func scanUserOperationInput() string {
 		userInput = strings.ToUpper(scanner.Text())
 	}
 	return userInput
+}
+
+func getValidOperation() string {
+	for {
+		operation := scanUserOperationInput()
+		if operation == "SUM" || operation == "AVG" || operation == "MED" || operation == "EXIT" {
+			return operation
+		}
+		fmt.Println("Ошибка! Операция не найдена.")
+	}
+}
+
+func getValidNumbers() []float64 {
+	for {
+		input := scanUserNumInput()
+		nums := transformUserInput(input)
+		if len(nums) > 0 {
+			return nums
+		}
+		fmt.Println("Ошибка! Вы не ввели ни одного валидного числа.")
+	}
 }
 
 func clearTerminal() {
