@@ -5,9 +5,9 @@ import (
 	"strings"
 )
 
-const ConvUSDtoEUR float64 = 0.84
-const ConvUSDtoRUB float64 = 77.50
-const ConvEURtoRUB float64 = ConvUSDtoRUB / ConvUSDtoEUR
+const ConvUSDEUR float64 = 0.84
+const ConvUSDRUB float64 = 77.50
+const ConvEURRUB float64 = 98.0
 
 func main() {
 	userMenu()
@@ -120,19 +120,20 @@ func calculatePair(volume float64, pairFirst, pairSecond string) {
 		var choice int
 		convVolume := volume
 
-		switch {
-		case pairFirst == "USD" && pairSecond == "EUR":
-			convVolume *= ConvUSDtoEUR
-		case pairFirst == "USD" && pairSecond == "RUB":
-			convVolume *= ConvUSDtoRUB
-		case pairFirst == "EUR" && pairSecond == "RUB":
-			convVolume *= ConvEURtoRUB
-		case pairFirst == "EUR" && pairSecond == "USD":
-			convVolume /= ConvUSDtoEUR
-		case pairFirst == "RUB" && pairSecond == "EUR":
-			convVolume /= ConvEURtoRUB
-		case pairFirst == "RUB" && pairSecond == "USD":
-			convVolume /= ConvUSDtoRUB
+		rates := map[string]float64{
+			"USDEUR": ConvUSDEUR,
+			"USDRUB": ConvUSDRUB,
+			"EURRUB": ConvEURRUB,
+			"EURUSD": 1 / ConvUSDEUR, // обратные пары, сразу записываем результат деления
+			"RUBUSD": 1 / ConvUSDRUB,
+			"RUBEUR": 1 / ConvEURRUB,
+		}
+
+		pair := pairFirst + pairSecond
+		if rate, ok := rates[pair]; ok {
+			convVolume *= rate
+		} else {
+			fmt.Println("Валютная пара не найдена")
 		}
 
 		clearTerminal()
@@ -157,8 +158,8 @@ func currentExchange() {
 	var choice int
 	clearTerminal()
 	fmt.Println("=== Актуальный курс валют к рублю ===")
-	fmt.Printf("USD = %.2f\n", ConvUSDtoRUB)
-	fmt.Printf("EUR = %.2f\n", ConvEURtoRUB)
+	fmt.Printf("USD = %.2f\n", ConvUSDRUB)
+	fmt.Printf("EUR = %.2f\n", ConvEURRUB)
 	fmt.Printf("\n0. Вернуться в меню\n")
 	fmt.Print("\nВыберите пункт меню: ")
 	fmt.Scan(&choice)
