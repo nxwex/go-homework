@@ -165,7 +165,7 @@ func repeatRunApp() bool {
 	for {
 		fmt.Println("Желаете поворить рассчет? (y/n)")
 		fmt.Print("\nВвод:")
-		fmt.Scan(&choice)
+		fmt.Scanln(&choice)
 
 		if strings.EqualFold(choice, "y") {
 			clearTerminal()
