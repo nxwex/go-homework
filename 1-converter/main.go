@@ -14,6 +14,15 @@ func main() {
 }
 
 func userMenu() {
+	rates := map[string]float64{
+		"USDEUR": ConvUSDEUR,
+		"USDRUB": ConvUSDRUB,
+		"EURRUB": ConvEURRUB,
+		"EURUSD": 1 / ConvUSDEUR, // обратные пары, сразу записываем результат деления
+		"RUBUSD": 1 / ConvUSDRUB,
+		"RUBEUR": 1 / ConvEURRUB,
+	}
+
 	for {
 		var choice int
 		clearTerminal()
@@ -32,7 +41,7 @@ func userMenu() {
 		switch choice {
 		case 1:
 			volume, pairFirst, pairSecond := inputUser()
-			calculatePair(volume, pairFirst, pairSecond)
+			calculatePair(volume, pairFirst, pairSecond, &rates)
 		case 2:
 			currentExchange()
 		case 3:
@@ -115,25 +124,16 @@ func inputAmount() float64 {
 	}
 }
 
-func calculatePair(volume float64, pairFirst, pairSecond string) {
+func calculatePair(volume float64, pairFirst, pairSecond string, rates *map[string]float64) {
 	for {
 		var choice int
 		convVolume := volume
-
-		rates := map[string]float64{
-			"USDEUR": ConvUSDEUR,
-			"USDRUB": ConvUSDRUB,
-			"EURRUB": ConvEURRUB,
-			"EURUSD": 1 / ConvUSDEUR, // обратные пары, сразу записываем результат деления
-			"RUBUSD": 1 / ConvUSDRUB,
-			"RUBEUR": 1 / ConvEURRUB,
-		}
-
 		pair := pairFirst + pairSecond
-		if rate, ok := rates[pair]; ok {
+		if rate, ok := (*rates)[pair]; ok {
 			convVolume *= rate
 		} else {
 			fmt.Println("Валютная пара не найдена")
+			continue
 		}
 
 		clearTerminal()
