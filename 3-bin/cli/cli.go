@@ -10,15 +10,15 @@ import (
 func UserMenu() {
 	reader := bufio.NewReader(os.Stdin)
 	var actBins bins.BinList
-	bins.ClearTerminal()
+	ClearTerminal()
 
+	fmt.Println("=== bins менеджер ===")
 	for {
-		fmt.Println("=== bins менеджер ===")
 		fmt.Println("1. Создать новый bin")
 		fmt.Println("2. Показать существующие")
 		fmt.Println("0. Выход")
 
-		choice, err := bins.Prompt(reader, "Ввод >> ")
+		choice, err := bins.Prompt(reader, "\nВвод >> ")
 		if err != nil {
 			fmt.Println("Ошибка:", err)
 			return
@@ -26,17 +26,23 @@ func UserMenu() {
 
 		switch choice {
 		case "1":
-			bins.ClearTerminal()
-			actBins = bins.CreateBin(reader, actBins)
+			ClearTerminal()
+			if err := bins.CreateBin(reader, &actBins); err != nil {
+				fmt.Println("Ошибка:", err)
+			}
 		case "2":
-			bins.ClearTerminal()
+			ClearTerminal()
 			bins.ShowAllBins(actBins)
 		case "0":
-			bins.ClearTerminal()
+			ClearTerminal()
 			return
 		default:
-			bins.ClearTerminal()
+			ClearTerminal()
 			fmt.Println(">> Ошибка! Введите существующий пункт меню")
 		}
 	}
+}
+
+func ClearTerminal() {
+	fmt.Print("\x1b[2J\x1b[H")
 }

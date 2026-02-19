@@ -3,6 +3,7 @@ package bins
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -17,68 +18,83 @@ type Bin struct {
 
 type BinList []Bin
 
-func CreateBin(reader *bufio.Reader, bins BinList) BinList {
+func (l *BinList) AddNew(id, name string, private bool) Bin {
+	b := NewBin(id, name, private)
+	*l = append(*l, b)
+	return b
+}
+
+func CreateBin(reader *bufio.Reader, bins *BinList) error {
 	fmt.Println("Создание нового bin")
 
 	id, err := Prompt(reader, "Введите id: ")
 	if err != nil {
-		fmt.Println("Ошибка:", err)
-		return bins
+		return err
 	}
 
 	name, err := Prompt(reader, "Введите название: ")
 	if err != nil {
-		fmt.Println("Ошибка:", err)
-		return bins
+		return err
 	}
 
-	privateStr, err := Prompt(reader, "Приватный бин? (true/false): ")
-	if err != nil {
-		fmt.Println("Ошибка:", err)
-		return bins
-	}
+	var private bool
+	for {
+		privateStr, err := Prompt(reader, "Приватный бин? (true/false): ")
+		if err != nil {
+			return err
+		}
 
-	private, err := strconv.ParseBool(privateStr)
-	if err != nil {
-		ClearTerminal()
-		fmt.Println("Ошибка! Значение должно быть true или false.")
-		return bins
+		v, err := strconv.ParseBool(privateStr)
+		if err != nil {
+			fmt.Println("Ошибка! Значение должно быть true или false.")
+			continue
+		}
+		private = v
+		break
 	}
 
 	if err := ValidateUserInput(id, name); err != nil {
-		fmt.Println(err)
-		return bins
+		return err
 	}
 
-	bin := NewBin(id, name, private)
-	bins = AddBin(bins, bin)
-	ClearTerminal()
-	fmt.Printf(">> Bin создан: %+v\n", bin)
-	fmt.Printf("Всего bins: %d\n", len(bins))
+	bin := bins.AddNew(id, name, private)
+	fmt.Printf("* Bin создан: %+v\n", bin)
+	fmt.Printf("Всего бинов: %d\n\n", len(*bins))
 
-	return bins
+	return nil
 }
 
 func ShowAllBins(bins BinList) {
 	if len(bins) == 0 {
-		fmt.Println(">> Список пуст")
+		fmt.Print("* Список пуст\n\n")
 		return
 	}
 
 	fmt.Println("=== Список бинов ===")
 	for i, b := range bins {
-		fmt.Printf("%d) ID=%s | Name=%s | Private=%t | CreatedAt=%s\n",
+		fmt.Printf("%d) ID = %s | Name = %s | Private = %t | CreatedAt = %s\n\n",
 			i+1, b.ID, b.Name, b.Private, b.CreatedAt.Format(time.RFC3339))
 	}
 }
 
 func Prompt(r *bufio.Reader, label string) (string, error) {
-	fmt.Print(label)
-	text, err := r.ReadString('\n')
-	if err != nil {
-		return "", err
+	for {
+		fmt.Print(label)
+		text, err := r.ReadString('\n')
+		if err != nil && err != io.EOF {
+
+			return "", err
+		}
+		text = strings.TrimSpace(text)
+		if text == "" {
+			if err == io.EOF {
+				return "", io.EOF
+			}
+			fmt.Println("Ошибка! Ввод не должен быть пустым")
+			continue
+		}
+		return text, nil
 	}
-	return strings.TrimSpace(text), nil
 }
 
 func ValidateUserInput(id, name string) error {
@@ -98,12 +114,4 @@ func NewBin(id, name string, private bool) Bin {
 		CreatedAt: time.Now(),
 		Private:   private,
 	}
-}
-
-func AddBin(list BinList, b Bin) BinList {
-	return append(list, b)
-}
-
-func ClearTerminal() {
-	fmt.Print("\x1b[2J\x1b[H")
 }
