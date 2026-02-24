@@ -37,7 +37,7 @@ func UserMenu() {
 			}
 		case "2":
 			ClearTerminal()
-			bins.ShowAllBins(actBins, s)
+			bins.ShowAllBins(actBins)
 		case "0":
 			ClearTerminal()
 			return

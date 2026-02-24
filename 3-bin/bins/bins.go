@@ -74,16 +74,11 @@ func CreateBin(reader *bufio.Reader, bins *BinList, s Storage) error {
 	return nil
 }
 
-func ShowAllBins(bins BinList, s Storage) {
+func ShowAllBins(bins BinList) {
 	if len(bins) == 0 {
 		fmt.Print("* Список пуст\n\n")
+		return
 	}
-
-	err := s.ReadJSON(&bins)
-	if err != nil {
-		fmt.Println(err)
-	}
-
 	fmt.Println("* Список бинов")
 	for i, b := range bins {
 		fmt.Printf("%d) ID = %s | Name = %s | Private = %t | CreatedAt = %s\n",
