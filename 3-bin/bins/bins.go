@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+type Storage interface {
+	SaveJSON(BinList) error
+	ReadJSON(*BinList) error
+}
+
 type Bin struct {
 	ID        string    `json:"id"`
 	Private   bool      `json:"private"`
@@ -24,7 +29,7 @@ func (l *BinList) AddNew(id, name string, private bool) Bin {
 	return b
 }
 
-func CreateBin(reader *bufio.Reader, bins *BinList) error {
+func CreateBin(reader *bufio.Reader, bins *BinList, s Storage) error {
 	fmt.Println("Создание нового bin")
 
 	id, err := Prompt(reader, "Введите id: ")
@@ -58,7 +63,12 @@ func CreateBin(reader *bufio.Reader, bins *BinList) error {
 	}
 
 	bin := bins.AddNew(id, name, private)
-	fmt.Printf("* Bin создан: %+v\n", bin)
+	err = s.SaveJSON(*bins)
+	if err != nil {
+		return err
+	}
+	fmt.Println("===")
+	fmt.Printf("* Успешно! Bin создан: %+v\n", bin)
 	fmt.Printf("Всего бинов: %d\n\n", len(*bins))
 
 	return nil
@@ -69,12 +79,12 @@ func ShowAllBins(bins BinList) {
 		fmt.Print("* Список пуст\n\n")
 		return
 	}
-
-	fmt.Println("=== Список бинов ===")
+	fmt.Println("* Список бинов")
 	for i, b := range bins {
-		fmt.Printf("%d) ID = %s | Name = %s | Private = %t | CreatedAt = %s\n\n",
+		fmt.Printf("%d) ID = %s | Name = %s | Private = %t | CreatedAt = %s\n",
 			i+1, b.ID, b.Name, b.Private, b.CreatedAt.Format(time.RFC3339))
 	}
+	fmt.Println("---")
 }
 
 func Prompt(r *bufio.Reader, label string) (string, error) {
