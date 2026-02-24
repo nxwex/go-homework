@@ -6,20 +6,32 @@ import (
 	"os"
 )
 
-type BinStorage bins.BinList
-
-func (b *BinStorage) SaveJSON(path string) error {
-	data, err := json.Marshal(b)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, data, 0644)
+type BinStorage struct {
+	filename string
 }
 
-func (b *BinStorage) ReadJSON(path string) error {
-	data, err := os.ReadFile(path)
+func NewBinStorage(filename string) *BinStorage {
+	return &BinStorage{
+		filename: filename,
+	}
+}
+
+func (b *BinStorage) SaveJSON(list bins.BinList) error {
+	data, err := json.Marshal(list)
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(data, b)
+	return os.WriteFile(b.filename, data, 0644)
+}
+
+func (b *BinStorage) ReadJSON(list *bins.BinList) error {
+	data, err := os.ReadFile(b.filename)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(data, list)
+	if err != nil {
+		return err
+	}
+	return nil
 }

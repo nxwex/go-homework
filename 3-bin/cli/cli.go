@@ -3,13 +3,18 @@ package cli
 import (
 	"bufio"
 	"demo/bin/bins"
+	"demo/bin/storage"
 	"fmt"
 	"os"
 )
 
 func UserMenu() {
 	reader := bufio.NewReader(os.Stdin)
+	s := storage.NewBinStorage("list.json")
 	var actBins bins.BinList
+	if err := s.ReadJSON(&actBins); err != nil {
+		fmt.Println("info: Локальная база не найдена, создаю новую")
+	}
 	ClearTerminal()
 
 	fmt.Println("=== bins менеджер ===")
@@ -27,12 +32,12 @@ func UserMenu() {
 		switch choice {
 		case "1":
 			ClearTerminal()
-			if err := bins.CreateBin(reader, &actBins); err != nil {
+			if err := bins.CreateBin(reader, &actBins, s); err != nil {
 				fmt.Println("Ошибка:", err)
 			}
 		case "2":
 			ClearTerminal()
-			bins.ShowAllBins(actBins)
+			bins.ShowAllBins(actBins, s)
 		case "0":
 			ClearTerminal()
 			return
