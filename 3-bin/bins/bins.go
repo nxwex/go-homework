@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -20,19 +19,32 @@ type Bin struct {
 	CreatedAt time.Time `json:"created_at"`
 	Name      string    `json:"name"`
 }
+type BinRecord struct {
+	Bin
+	UpdatedAt time.Time `json:"updated_at"`
+}
 
-type BinList []Bin
+type BinList []BinRecord
 
-func (l *BinList) AddNew(id, name string, private bool) Bin {
+func (l *BinList) AddNew(id, name string, private bool) BinRecord {
 	b := NewBin(id, name, private)
 	*l = append(*l, b)
 	return b
 }
 
-func CreateBin(reader *bufio.Reader, bins *BinList, s Storage) error {
-	fmt.Println("Создание нового bin")
+func (l *BinList) isRepeat(id string) bool {
+	for _, b := range *l {
+		if b.ID == id {
+			return true
+		}
+	}
+	return false
+}
 
-	id, err := Prompt(reader, "Введите id: ")
+func CreateBin(reader *bufio.Reader, bins *BinList, s Storage) error {
+	fmt.Println("=== Создание нового bin ===")
+
+	id, err := promptUniqueID(reader, *bins)
 	if err != nil {
 		return err
 	}
@@ -42,36 +54,51 @@ func CreateBin(reader *bufio.Reader, bins *BinList, s Storage) error {
 		return err
 	}
 
-	var private bool
-	for {
-		privateStr, err := Prompt(reader, "Приватный бин? (true/false): ")
-		if err != nil {
-			return err
-		}
-
-		v, err := strconv.ParseBool(privateStr)
-		if err != nil {
-			fmt.Println("Ошибка! Значение должно быть true или false.")
-			continue
-		}
-		private = v
-		break
-	}
-
-	if err := ValidateUserInput(id, name); err != nil {
-		return err
-	}
-
-	bin := bins.AddNew(id, name, private)
-	err = s.SaveJSON(*bins)
+	isPrivate, err := promptPrivate(reader)
 	if err != nil {
 		return err
 	}
-	fmt.Println("===")
-	fmt.Printf("* Успешно! Bin создан: %+v\n", bin)
-	fmt.Printf("Всего бинов: %d\n\n", len(*bins))
 
-	return nil
+	newBin := bins.AddNew(id, name, isPrivate)
+
+	fmt.Println("===")
+	fmt.Printf("* Успешно! Bin создан: %+v\n", newBin)
+	fmt.Printf("Всего бинов: %d\n\n", len(*bins))
+	return s.SaveJSON(*bins)
+}
+
+func promptUniqueID(reader *bufio.Reader, bins BinList) (string, error) {
+	for {
+		id, err := Prompt(reader, "Введите id: ")
+		if err != nil {
+			return "", err
+		}
+
+		if bins.isRepeat(id) {
+			fmt.Printf("Ошибка! ID '%s' уже занят.\n", id)
+			continue
+		}
+
+		return id, nil
+	}
+}
+
+func promptPrivate(reader *bufio.Reader) (bool, error) {
+	for {
+		input, err := Prompt(reader, "Сделать приватным? (y/n): ")
+		if err != nil {
+			return false, err
+		}
+
+		switch strings.ToLower(input) {
+		case "y", "yes":
+			return true, nil
+		case "n", "no":
+			return false, nil
+		default:
+			fmt.Println("Пожалуйста, введите 'y' или 'n'")
+		}
+	}
 }
 
 func ShowAllBins(bins BinList) {
@@ -107,21 +134,15 @@ func Prompt(r *bufio.Reader, label string) (string, error) {
 	}
 }
 
-func ValidateUserInput(id, name string) error {
-	if id == "" {
-		return fmt.Errorf("ошибка! ID не может быть пустым")
-	}
-	if name == "" {
-		return fmt.Errorf("ошибка! название не может быть пустым")
-	}
-	return nil
-}
-
-func NewBin(id, name string, private bool) Bin {
-	return Bin{
-		ID:        id,
-		Name:      name,
-		CreatedAt: time.Now(),
-		Private:   private,
+func NewBin(id, name string, private bool) BinRecord {
+	now := time.Now()
+	return BinRecord{
+		Bin: Bin{
+			ID:        id,
+			Name:      name,
+			CreatedAt: now,
+			Private:   private,
+		},
+		UpdatedAt: now,
 	}
 }
