@@ -9,15 +9,26 @@ import (
 	"strings"
 )
 
+var calculateChoice = map[string]func([]float64) float64{
+	"AVG": calculateAvg,
+	"SUM": calculateSum,
+	"MED": calculateMed,
+}
+
 func main() {
 	runApp()
 }
 
 func runApp() {
 	clearTerminal()
+	var operations []string
+	for op := range calculateChoice {
+		operations = append(operations, op)
+	}
+	opString := strings.Join(operations, ", ")
 	fmt.Println("=== Калькулятор ===")
 	for {
-		fmt.Println("Какую операцию желаете выполнить? (AVG, SUM, MED)")
+		fmt.Printf("Какую операцию желаете выполнить? (%s)\n", opString)
 		fmt.Println("Для выхода напишите 'Exit'")
 		userOperationInput := getValidOperation()
 		if userOperationInput == "EXIT" {
@@ -28,8 +39,11 @@ func runApp() {
 		userNumbers := getValidNumbers()
 
 		clearTerminal()
-		result := fmt.Sprintf("Ваш результат: %v", calculateUserInput(userNumbers, userOperationInput))
-		fmt.Println(result)
+		result, err := calculateUserInput(userNumbers, userOperationInput)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println("Ваш результат: ", result)
 		fmt.Println("===")
 		if !repeatRunApp() {
 			clearTerminal()
@@ -100,19 +114,12 @@ func transformUserInput(userInput string) []float64 {
 }
 
 // вызывает функцию в зависимости от выбора
-func calculateUserInput(userNumbers []float64, operation string) float64 {
-	var result float64
-	switch operation {
-	case "AVG":
-		result = calculateAvg(userNumbers)
-	case "SUM":
-		result = calculateSum(userNumbers)
-	case "MED":
-		result = calculateMed(userNumbers)
-	default:
-		fmt.Println("Ошибка! Операция не найдена.")
+func calculateUserInput(nums []float64, operation string) (float64, error) {
+	if fn, ok := calculateChoice[operation]; ok {
+		return fn(nums), nil
 	}
-	return result
+	err := fmt.Errorf("Ошибка! Операция '%s' не найдена", operation)
+	return 0, err
 }
 
 func scanUserNumInput() string {
@@ -138,10 +145,13 @@ func scanUserOperationInput() string {
 func getValidOperation() string {
 	for {
 		operation := scanUserOperationInput()
-		if operation == "SUM" || operation == "AVG" || operation == "MED" || operation == "EXIT" {
+		if operation == "EXIT" {
 			return operation
 		}
-		fmt.Println("Ошибка! Операция не найдена.")
+		if _, exists := calculateChoice[operation]; exists {
+			return operation
+		}
+		fmt.Printf("Ошибка! Операция '%s' не найдена", operation)
 	}
 }
 
@@ -163,8 +173,8 @@ func clearTerminal() {
 func repeatRunApp() bool {
 	var choice string
 	for {
-		fmt.Println("Желаете поворить рассчет? (y/n)")
-		fmt.Print("\nВвод:")
+		fmt.Println("Желаете повторить рассчет? (y/n)")
+		fmt.Print("\nВвод: ")
 		fmt.Scanln(&choice)
 
 		if strings.EqualFold(choice, "y") {
